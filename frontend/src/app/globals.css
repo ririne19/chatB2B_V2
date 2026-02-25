@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes typing {
+  0%, 60%, 100% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+model Organization {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  isAdminCompany Boolean @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users                  User[]
+  conversationsInitiated  Conversation[]           @relation("ConversationInitiator")
+  conversationsReceived  Conversation[]           @relation("ConversationPartner")
+
+  @@index([slug])
+  @@index([isAdminCompany])
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  firstName      String
+  lastName       String
+  role           UserRole
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sentMessages   Message[]
+
+  @@index([email])
+  @@index([role])
+  @@index([organizationId])
+}
+
+model Conversation {
+  id                   String   @id @default(cuid())
+  title                String?
+  organizationId       String
+  partnerOrganizationId String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  organization       Organization @relation("ConversationInitiator", fields: [organizationId], references: [id], onDelete: Cascade)
+  partnerOrganization Organization? @relation("ConversationPartner", fields: [partnerOrganizationId], references: [id], onDelete: SetNull)
+  messages           Message[]
+
+  @@index([organizationId])
+  @@index([partnerOrganizationId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  content        String   @db.Text
+  conversationId String
+  senderId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+}
