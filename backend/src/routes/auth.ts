@@ -14,14 +14,6 @@ function getJwtSecret(): string {
   return s;
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-}
-
 function signToken(payload: {
   userId: string;
   email: string;
@@ -49,7 +41,12 @@ function userToJson(user: {
   };
 }
 
+// Slugs des deux seules organisations (ENTREPRISE DEMO) — pas de création de société
+const ORG_SLUG_SUPPORT = "entreprise-demo-support";
+const ORG_SLUG_CLIENT = "entreprise-demo-client";
+
 // POST /api/auth/register
+// accountType "agent" = rejoindre ENTREPRISE DEMO SUPPORT, "client" = rejoindre ENTREPRISE DEMO CLIENT
 router.post(
   "/register",
   [
@@ -59,11 +56,8 @@ router.post(
       .withMessage("Le mot de passe doit faire au moins 8 caractères"),
     body("firstName").trim().notEmpty().withMessage("Prénom requis"),
     body("lastName").trim().notEmpty().withMessage("Nom requis"),
-    body("organizationName").optional().trim(),
-    body("organizationSlug").optional().trim().withMessage("Slug d'organisation invalide"),
     body("role").optional().isIn(["ADMIN", "MEMBER"]).withMessage("Rôle invalide (ADMIN ou MEMBER)"),
-    body("isAdminCompany").optional().isBoolean().withMessage("isAdminCompany doit être un booléen"),
-    body("accountType").optional().isIn(["agent", "client"]).withMessage("accountType invalide (agent ou client)"),
+    body("accountType").isIn(["agent", "client"]).withMessage("Choisissez : rejoindre l'équipe support (agent) ou créer un compte client (client)"),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -73,17 +67,14 @@ router.post(
         return;
       }
 
-      const { email, password, firstName, lastName, organizationName, organizationSlug, role, isAdminCompany, accountType } =
+      const { email, password, firstName, lastName, role, accountType } =
         req.body as {
           email: string;
           password: string;
           firstName: string;
           lastName: string;
-          organizationName?: string;
-          organizationSlug?: string;
           role?: "ADMIN" | "MEMBER";
-          isAdminCompany?: boolean;
-          accountType?: "agent" | "client";
+          accountType: "agent" | "client";
         };
 
       const existing = await prisma.user.findUnique({ where: { email } });
@@ -92,40 +83,19 @@ router.post(
         return;
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      let organization: { id: string; name: string; slug: string };
+      const orgSlug = accountType === "agent" ? ORG_SLUG_SUPPORT : ORG_SLUG_CLIENT;
+      const organization = await prisma.organization.findUnique({
+        where: { slug: orgSlug },
+      });
 
-      if (organizationSlug?.trim()) {
-        const existingOrg = await prisma.organization.findUnique({
-          where: { slug: organizationSlug.trim().toLowerCase() },
+      if (!organization) {
+        res.status(500).json({
+          error: "Configuration serveur : organisation ENTREPRISE DEMO introuvable. Exécutez le seed.",
         });
-        if (!existingOrg) {
-          res.status(400).json({
-            error: "Organisation introuvable. Vérifiez le nom d'organisation (ex: acme).",
-          });
-          return;
-        }
-        organization = existingOrg;
-      } else {
-        const orgName = organizationName?.trim() || "Personal";
-        const baseSlug = slugify(orgName) || "personal";
-        let slug = baseSlug;
-        let count = 0;
-        while (await prisma.organization.findUnique({ where: { slug } })) {
-          count++;
-          slug = `${baseSlug}-${count}`;
-        }
-        // B2B après-vente : agent = entreprise vendeur (isAdminCompany), client = entreprise cliente
-        const isVendorCompany = accountType === "agent" ? true : accountType === "client" ? false : Boolean(isAdminCompany);
-        organization = await prisma.organization.create({
-          data: {
-            name: orgName,
-            slug,
-            isAdminCompany: isVendorCompany,
-          },
-        });
+        return;
       }
 
+      const hashedPassword = await bcrypt.hash(password, 10);
       const userRole = role === "ADMIN" ? "ADMIN" : "MEMBER";
 
       const user = await prisma.user.create({

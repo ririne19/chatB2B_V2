@@ -4,7 +4,7 @@ export default function HomePage() {
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4">
       <div className="text-center space-y-6 max-w-md">
-        <h1 className="text-4xl font-bold text-slate-900">Chat B2B</h1>
+        <h1 className="text-4xl font-bold text-slate-900">ENTREPRISE DEMO</h1>
         <p className="text-lg text-slate-600">
           Plateforme de communication sécurisée
         </p>

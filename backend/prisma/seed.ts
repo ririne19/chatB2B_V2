@@ -7,137 +7,133 @@ const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 10;
 
 async function main() {
-  const acme = await prisma.organization.upsert({
-    where: { slug: "acme" },
-    update: { isAdminCompany: true },
-    create: { name: "Acme Corp", slug: "acme", isAdminCompany: true },
+  // Une seule "société" : ENTREPRISE DEMO — côté support (vendeur) et côté client
+  const supportOrg = await prisma.organization.upsert({
+    where: { slug: "entreprise-demo-support" },
+    update: { name: "ENTREPRISE DEMO SUPPORT", isAdminCompany: true },
+    create: { name: "ENTREPRISE DEMO SUPPORT", slug: "entreprise-demo-support", isAdminCompany: true },
   });
 
-  const techstart = await prisma.organization.upsert({
-    where: { slug: "techstart" },
-    update: {},
-    create: { name: "TechStart", slug: "techstart", isAdminCompany: false },
+  const clientOrg = await prisma.organization.upsert({
+    where: { slug: "entreprise-demo-client" },
+    update: { name: "ENTREPRISE DEMO CLIENT" },
+    create: { name: "ENTREPRISE DEMO CLIENT", slug: "entreprise-demo-client", isAdminCompany: false },
   });
 
-  const adminAcme = await prisma.user.upsert({
-    where: { email: "admin@acme.com" },
+  const adminSupport = await prisma.user.upsert({
+    where: { email: "admin@entreprise-demo.com" },
     update: {},
     create: {
-      email: "admin@acme.com",
+      email: "admin@entreprise-demo.com",
       password: await bcrypt.hash("Admin123!", BCRYPT_ROUNDS),
       firstName: "Admin",
-      lastName: "Acme",
+      lastName: "Support",
       role: "ADMIN",
-      organizationId: acme.id,
+      organizationId: supportOrg.id,
     },
   });
 
-  const userAcme = await prisma.user.upsert({
-    where: { email: "user@acme.com" },
+  const userSupport = await prisma.user.upsert({
+    where: { email: "user@entreprise-demo.com" },
     update: {},
     create: {
-      email: "user@acme.com",
+      email: "user@entreprise-demo.com",
       password: await bcrypt.hash("User123!", BCRYPT_ROUNDS),
       firstName: "User",
-      lastName: "Acme",
+      lastName: "Support",
       role: "MEMBER",
-      organizationId: acme.id,
+      organizationId: supportOrg.id,
     },
   });
 
-  const adminTechstart = await prisma.user.upsert({
-    where: { email: "admin@techstart.com" },
+  const adminClient = await prisma.user.upsert({
+    where: { email: "client@entreprise-demo.com" },
     update: {},
     create: {
-      email: "admin@techstart.com",
+      email: "client@entreprise-demo.com",
       password: await bcrypt.hash("Admin123!", BCRYPT_ROUNDS),
-      firstName: "Admin",
-      lastName: "TechStart",
+      firstName: "Client",
+      lastName: "Demo",
       role: "ADMIN",
-      organizationId: techstart.id,
+      organizationId: clientOrg.id,
     },
   });
 
-  const userTechstart = await prisma.user.upsert({
-    where: { email: "user@techstart.com" },
+  const userClient = await prisma.user.upsert({
+    where: { email: "user@client-demo.com" },
     update: {},
     create: {
-      email: "user@techstart.com",
+      email: "user@client-demo.com",
       password: await bcrypt.hash("User123!", BCRYPT_ROUNDS),
       firstName: "User",
-      lastName: "TechStart",
+      lastName: "Client",
       role: "MEMBER",
-      organizationId: techstart.id,
+      organizationId: clientOrg.id,
     },
   });
 
   // Nettoyer les conversations existantes (cascade supprime les messages)
   await prisma.conversation.deleteMany({});
 
-  // B2B : TechStart (client) parle à Acme (entreprise admin) - Conv "Demande partenaire"
-  const convB2B1 = await prisma.conversation.create({
+  // Client (ENTREPRISE DEMO CLIENT) parle au support (ENTREPRISE DEMO SUPPORT)
+  const conv1 = await prisma.conversation.create({
     data: {
-      title: "Demande partenaire",
-      organizationId: techstart.id,
-      partnerOrganizationId: acme.id,
+      title: "Demande support",
+      organizationId: clientOrg.id,
+      partnerOrganizationId: supportOrg.id,
     },
   });
 
   await prisma.message.createMany({
     data: [
-      { content: "Bonjour, nous souhaiterions devenir partenaire. Comment procéder ?", conversationId: convB2B1.id, senderId: adminTechstart.id },
-      { content: "Bonjour ! Merci pour votre intérêt. Je vous envoie notre plaquette et un rendez-vous.", conversationId: convB2B1.id, senderId: adminAcme.id },
-      { content: "Parfait, nous sommes disponibles la semaine prochaine.", conversationId: convB2B1.id, senderId: userTechstart.id },
+      { content: "Bonjour, j'ai une question sur ma commande.", conversationId: conv1.id, senderId: adminClient.id },
+      { content: "Bonjour ! Je vous réponds sous peu.", conversationId: conv1.id, senderId: adminSupport.id },
+      { content: "Parfait, merci.", conversationId: conv1.id, senderId: userClient.id },
     ],
   });
 
-  // B2B : Autre conversation Acme <-> TechStart (Support)
-  const convB2B2 = await prisma.conversation.create({
+  const conv2 = await prisma.conversation.create({
     data: {
       title: "Support technique",
-      organizationId: techstart.id,
-      partnerOrganizationId: acme.id,
+      organizationId: clientOrg.id,
+      partnerOrganizationId: supportOrg.id,
     },
   });
 
   await prisma.message.createMany({
     data: [
-      { content: "Nous avons un souci avec l'intégration API.", conversationId: convB2B2.id, senderId: userTechstart.id },
-      { content: "Notre équipe regarde et vous recontacte sous 24h.", conversationId: convB2B2.id, senderId: adminAcme.id },
+      { content: "Nous avons un souci avec l'intégration.", conversationId: conv2.id, senderId: userClient.id },
+      { content: "Notre équipe regarde et vous recontacte sous 24h.", conversationId: conv2.id, senderId: adminSupport.id },
     ],
   });
 
-  // Conversation interne Acme (sans partenaire)
-  const convAcmeInternal = await prisma.conversation.create({
+  // Conversation interne Support (sans partenaire)
+  const convInternal = await prisma.conversation.create({
     data: {
-      title: "Discussion interne Acme",
-      organizationId: acme.id,
+      title: "Discussion interne",
+      organizationId: supportOrg.id,
     },
   });
 
   await prisma.message.createMany({
     data: [
-      { content: "Point équipe : bienvenue sur le chat B2B.", conversationId: convAcmeInternal.id, senderId: adminAcme.id },
-      { content: "Merci !", conversationId: convAcmeInternal.id, senderId: userAcme.id },
+      { content: "Bienvenue sur le chat ENTREPRISE DEMO.", conversationId: convInternal.id, senderId: adminSupport.id },
+      { content: "Merci !", conversationId: convInternal.id, senderId: userSupport.id },
     ],
   });
 
   console.log("Seed OK:", {
     organizations: [
-      { slug: acme.slug, isAdminCompany: true },
-      { slug: techstart.slug, isAdminCompany: false },
+      { slug: supportOrg.slug, name: supportOrg.name, isAdminCompany: true },
+      { slug: clientOrg.slug, name: clientOrg.name, isAdminCompany: false },
     ],
     users: [
-      adminAcme.email,
-      userAcme.email,
-      adminTechstart.email,
-      userTechstart.email,
+      adminSupport.email,
+      userSupport.email,
+      adminClient.email,
+      userClient.email,
     ],
-    conversations: [
-      convB2B1.title,
-      convB2B2.title,
-      convAcmeInternal.title,
-    ],
+    conversations: [conv1.title, conv2.title, convInternal.title],
   });
 }
 

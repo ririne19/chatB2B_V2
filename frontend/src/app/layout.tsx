@@ -4,8 +4,8 @@ import { ConditionalNavbar } from "./ConditionalNavbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Chat B2B",
-  description: "Plateforme de communication sécurisée pour professionnels",
+  title: "ENTREPRISE DEMO",
+  description: "Plateforme de communication ENTREPRISE DEMO — clients et support",
 };
 
 export default function RootLayout({

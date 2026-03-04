@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useConversationsContext } from "@/src/contexts/ConversationsContext";
 import { NewConversationModal } from "@/src/components/NewConversationModal";
 import { formatRelativeTime } from "@/src/lib/utils";
 import type { Conversation } from "@/src/types";
 
-/** Nom de l'autre partie (client ou support) selon qui je suis dans la conversation */
+/** Nom de l'autre partie : ENTREPRISE DEMO CLIENT ou ENTREPRISE DEMO SUPPORT */
 function getCounterpartName(conv: Conversation, myOrgId: string): string {
   if (conv.organizationId === myOrgId) {
-    return conv.partnerOrganization?.name ?? "Client";
+    return conv.partnerOrganization?.name ?? "ENTREPRISE DEMO CLIENT";
   }
-  return conv.organization?.name ?? "Support";
+  return conv.organization?.name ?? "ENTREPRISE DEMO SUPPORT";
 }
 
 interface ConversationListProps {
@@ -33,7 +33,6 @@ function ConversationSkeleton() {
 
 export function ConversationList({ onCreateNew }: ConversationListProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const myOrgId = user?.organization?.id ?? "";
@@ -55,7 +54,8 @@ export function ConversationList({ onCreateNew }: ConversationListProps) {
     const conv = await createConversation(options);
     if (conv) {
       setModalOpen(false);
-      router.push(`/conversations/${conv.id}`);
+      // Actualisation complète de la page et redirection vers la conversation créée
+      window.location.href = `/conversations/${conv.id}`;
     }
   };
 
@@ -92,7 +92,7 @@ export function ConversationList({ onCreateNew }: ConversationListProps) {
         className="m-3 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
       >
         <span className="text-lg leading-none">+</span>
-        {user?.organization?.isAdminCompany ? "Conversation client" : "Contacter le support"}
+        {user?.organization?.isAdminCompany ? "Conversation client (ENTREPRISE DEMO CLIENT)" : "Contacter ENTREPRISE DEMO Support"}
       </button>
       <NewConversationModal
         isOpen={modalOpen}
@@ -110,8 +110,8 @@ export function ConversationList({ onCreateNew }: ConversationListProps) {
         ) : conversations.length === 0 ? (
           <div className="p-6 text-center text-slate-500 text-sm">
             {user?.organization?.isAdminCompany
-              ? "Les conversations avec vos clients apparaîtront ici."
-              : "Ouvrez une conversation pour contacter le support (après-vente)."}
+              ? "Les conversations avec ENTREPRISE DEMO CLIENT apparaîtront ici."
+              : "Ouvrez une conversation pour contacter ENTREPRISE DEMO Support."}
           </div>
         ) : (
           <div className="space-y-0.5 pb-2">

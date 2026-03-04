@@ -12,10 +12,8 @@ const schema = z.object({
   password: z.string().min(8, "Minimum 8 caractères"),
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
-  organizationName: z.string().optional(),
-  organizationSlug: z.string().optional(),
-  role: z.enum(["ADMIN", "MEMBER"]).default("MEMBER"),
-  isAdminCompany: z.boolean().optional(),
+  accountType: z.enum(["agent", "client"]),
+  role: z.enum(["ADMIN", "MEMBER"]).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -27,11 +25,17 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { organizationName: "", organizationSlug: "", role: "MEMBER", isAdminCompany: false },
+    defaultValues: {
+      accountType: "client",
+      role: "MEMBER",
+    },
   });
+
+  const watchedAccountType = watch("accountType");
 
   async function onSubmit(data: FormData) {
     setApiError(null);
@@ -41,10 +45,8 @@ export default function RegisterPage() {
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
-        organizationName: data.organizationName || undefined,
-        organizationSlug: data.organizationSlug?.trim() || undefined,
-        role: data.role,
-        isAdminCompany: data.isAdminCompany,
+        accountType: data.accountType as "agent" | "client",
+        role: data.accountType === "agent" ? (data.role ?? "MEMBER") : "MEMBER",
       });
     } catch (err: unknown) {
       const message =
@@ -64,7 +66,7 @@ export default function RegisterPage() {
             Créer un compte
           </h1>
           <p className="text-slate-600 text-sm mb-6">
-            Rejoignez la plateforme Chat B2B
+            ENTREPRISE DEMO — Rejoignez l&apos;équipe support ou créez un compte client
           </p>
 
           {apiError && (
@@ -74,6 +76,37 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-2">
+                Je suis
+              </span>
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="client"
+                    className="text-blue-600 focus:ring-blue-500"
+                    {...register("accountType")}
+                  />
+                  <span className="text-slate-700">Client B2B (ENTREPRISE DEMO CLIENT)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="agent"
+                    className="text-blue-600 focus:ring-blue-500"
+                    {...register("accountType")}
+                  />
+                  <span className="text-slate-700">Je rejoins ENTREPRISE DEMO (équipe support)</span>
+                </label>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                {watchedAccountType === "client"
+                  ? "Vous pourrez contacter le support ENTREPRISE DEMO pour vos demandes."
+                  : "Vous ferez partie de l'équipe support et répondrez aux clients."}
+              </p>
+            </div>
+
             <div>
               <label
                 htmlFor="email"
@@ -157,72 +190,27 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="organizationSlug"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
-                Rejoindre une organisation existante (optionnel)
-              </label>
-              <input
-                id="organizationSlug"
-                type="text"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: acme (laissez vide pour créer une nouvelle)"
-                {...register("organizationSlug")}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Si vous avez un nom d&apos;organisation (ex: acme), renseignez-le pour voir les mêmes conversations que vos collègues.
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="organizationName"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
-                Nom de la nouvelle organisation (si vous ne rejoignez pas une existante)
-              </label>
-              <input
-                id="organizationName"
-                type="text"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Ma Société"
-                {...register("organizationName")}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                id="isAdminCompany"
-                type="checkbox"
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                {...register("isAdminCompany")}
-              />
-              <label htmlFor="isAdminCompany" className="text-sm text-slate-700">
-                Mon entreprise est l&apos;entreprise centrale (les autres pourront nous contacter)
-              </label>
-            </div>
-
-            <div>
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
-                Rôle dans l&apos;organisation
-              </label>
-              <select
-                id="role"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                {...register("role")}
-              >
-                <option value="MEMBER">Membre (utilisateur)</option>
-                <option value="ADMIN">Administrateur</option>
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                L&apos;administrateur peut supprimer des conversations.
-              </p>
-            </div>
+            {watchedAccountType === "agent" && (
+              <div>
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-medium text-slate-700 mb-1"
+                >
+                  Rôle dans l&apos;équipe support
+                </label>
+                <select
+                  id="role"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  {...register("role")}
+                >
+                  <option value="MEMBER">Membre (agent)</option>
+                  <option value="ADMIN">Administrateur</option>
+                </select>
+                <p className="mt-1 text-xs text-slate-500">
+                  L&apos;administrateur peut gérer les conversations et l&apos;équipe.
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"

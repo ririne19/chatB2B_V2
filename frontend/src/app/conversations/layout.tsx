@@ -73,7 +73,7 @@ function ConversationsLayoutInner({
               href="/conversations"
               className="text-xl font-bold text-blue-600 hover:text-blue-700"
             >
-              Chat B2B
+              ENTREPRISE DEMO
             </Link>
             {hasConversationSelected && (
               <button

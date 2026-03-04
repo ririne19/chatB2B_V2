@@ -23,11 +23,8 @@ interface AuthContextValue extends AuthState {
     password: string;
     firstName: string;
     lastName: string;
-    accountType?: "agent" | "client";
-    organizationName?: string;
-    organizationSlug?: string;
+    accountType: "agent" | "client";
     role?: "ADMIN" | "MEMBER";
-    isAdminCompany?: boolean;
   }) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
@@ -88,11 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: string;
       firstName: string;
       lastName: string;
-      accountType?: "agent" | "client";
-      organizationName?: string;
-      organizationSlug?: string;
+      accountType: "agent" | "client";
       role?: "ADMIN" | "MEMBER";
-      isAdminCompany?: boolean;
     }) => {
       const { data } = await api.post<{ token: string; user: User }>(
         "/api/auth/register",

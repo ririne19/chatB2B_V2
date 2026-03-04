@@ -64,15 +64,15 @@ export function NewConversationModal({
         </h2>
         <p className="text-sm text-slate-600 mb-4">
           {organizations.some((o) => o.isAdminCompany)
-            ? "Contacter le support ou une entreprise partenaire."
-            : "Choisir le client avec lequel ouvrir une conversation."}
+            ? "Ouvrir une conversation avec ENTREPRISE DEMO CLIENT."
+            : "Ouvrir une conversation avec ENTREPRISE DEMO Support."}
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="partner" className="block text-sm font-medium text-slate-700 mb-1">
               {organizations.some((o) => o.isAdminCompany)
-                ? "Contacter"
-                : "Conversation avec le client"}
+                ? "Conversation avec"
+                : "Contacter"}
             </label>
             {loadingOrgs ? (
               <p className="text-sm text-slate-500">Chargement…</p>
@@ -90,7 +90,7 @@ export function NewConversationModal({
                 <option value="">— Ne pas associer de partenaire —</option>
                 {organizations.map((org) => (
                   <option key={org.id} value={org.slug}>
-                    {org.name} {org.isAdminCompany ? "(support / vendeur)" : ""}
+                    {org.name}
                   </option>
                 ))}
               </select>

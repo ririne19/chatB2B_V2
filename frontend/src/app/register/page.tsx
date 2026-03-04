@@ -13,8 +13,6 @@ const schema = z.object({
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   accountType: z.enum(["agent", "client"]),
-  organizationName: z.string().optional(),
-  organizationSlug: z.string().optional(),
   role: z.enum(["ADMIN", "MEMBER"]).optional(),
 });
 
@@ -33,8 +31,6 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       accountType: "client",
-      organizationName: "",
-      organizationSlug: "",
       role: "MEMBER",
     },
   });
@@ -50,8 +46,6 @@ export default function RegisterPage() {
         firstName: data.firstName,
         lastName: data.lastName,
         accountType: data.accountType as "agent" | "client",
-        organizationName: data.organizationName || undefined,
-        organizationSlug: data.organizationSlug?.trim() || undefined,
         role: data.accountType === "agent" ? (data.role ?? "MEMBER") : "MEMBER",
       });
     } catch (err: unknown) {
@@ -72,7 +66,7 @@ export default function RegisterPage() {
             Créer un compte
           </h1>
           <p className="text-slate-600 text-sm mb-6">
-            Chat B2B après-vente — choisissez votre profil
+            ENTREPRISE DEMO — Rejoignez l&apos;équipe support ou créez un compte client
           </p>
 
           {apiError && (
@@ -86,7 +80,7 @@ export default function RegisterPage() {
               <span className="block text-sm font-medium text-slate-700 mb-2">
                 Je suis
               </span>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
@@ -94,7 +88,7 @@ export default function RegisterPage() {
                     className="text-blue-600 focus:ring-blue-500"
                     {...register("accountType")}
                   />
-                  <span className="text-slate-700">Client (entreprise cliente)</span>
+                  <span className="text-slate-700">Client B2B (ENTREPRISE DEMO CLIENT)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -103,13 +97,13 @@ export default function RegisterPage() {
                     className="text-blue-600 focus:ring-blue-500"
                     {...register("accountType")}
                   />
-                  <span className="text-slate-700">Agent (après-vente)</span>
+                  <span className="text-slate-700">Je rejoins ENTREPRISE DEMO (équipe support)</span>
                 </label>
               </div>
               <p className="mt-1 text-xs text-slate-500">
                 {watchedAccountType === "client"
-                  ? "Vous pourrez contacter votre professionnel d'achat / après-vente."
-                  : "Vous pourrez répondre aux demandes de vos clients."}
+                  ? "Vous pourrez contacter le support ENTREPRISE DEMO pour vos demandes."
+                  : "Vous ferez partie de l'équipe support et répondrez aux clients."}
               </p>
             </div>
 
@@ -196,54 +190,13 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="organizationSlug"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
-                {watchedAccountType === "agent"
-                  ? "Rejoindre l'organisation de mon entreprise (optionnel)"
-                  : "Rejoindre mon entreprise existante (optionnel)"}
-              </label>
-              <input
-                id="organizationSlug"
-                type="text"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: acme (laissez vide pour créer une nouvelle)"
-                {...register("organizationSlug")}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                {watchedAccountType === "agent"
-                  ? "Si votre entreprise est déjà enregistrée, indiquez son identifiant (slug) pour rejoindre l'équipe."
-                  : "Si votre entreprise est déjà enregistrée, indiquez son identifiant pour être rattaché à votre professionnel d'achat."}
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="organizationName"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
-                {watchedAccountType === "agent"
-                  ? "Nom de votre entreprise (si vous créez l'organisation)"
-                  : "Nom de votre entreprise (si vous ne rejoignez pas une existante)"}
-              </label>
-              <input
-                id="organizationName"
-                type="text"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Ma Société"
-                {...register("organizationName")}
-              />
-            </div>
-
             {watchedAccountType === "agent" && (
               <div>
                 <label
                   htmlFor="role"
                   className="block text-sm font-medium text-slate-700 mb-1"
                 >
-                  Rôle dans l'équipe après-vente
+                  Rôle dans l&apos;équipe support
                 </label>
                 <select
                   id="role"
@@ -254,7 +207,7 @@ export default function RegisterPage() {
                   <option value="ADMIN">Administrateur</option>
                 </select>
                 <p className="mt-1 text-xs text-slate-500">
-                  L'administrateur peut gérer les conversations et l'équipe.
+                  L&apos;administrateur peut gérer les conversations et l&apos;équipe.
                 </p>
               </div>
             )}

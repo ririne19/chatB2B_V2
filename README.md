@@ -1,34 +1,43 @@
 # Chat B2B
 
-Plateforme de chat B2B avec Docker : PostgreSQL, Redis, backend Node.js (Express + Prisma), frontend Next.js.
+Plateforme de chat B2B avec Docker : PostgreSQL, Redis, backend Node.js (Express + Prisma + Socket.IO), frontend Next.js.  
+**Fonctionnalités :** authentification JWT, conversations B2B entre organisations, messages en temps réel (Socket.IO).
 
 ---
 
 ## Architecture du projet
 
 ```
-codeChatB2B_V2/
+chatB2B_V2/
 ├── docker-compose.yml    # Orchestration des 4 services
 ├── .env / .env.example
 ├── Makefile              # Raccourcis (start, stop, migrate, seed, reset)
-├── backend/              # API Express + Prisma + Redis
+├── backend/              # API Express + Prisma + Redis + Socket.IO
 │   ├── src/
-│   │   ├── config/       # database.ts (Prisma), redis.ts (ioredis)
+│   │   ├── config/       # database.ts (Prisma), redis.ts, socket.ts
+│   │   ├── routes/       # auth, organizations, conversations, messages
+│   │   ├── socket/       # handlers temps réel
+│   │   ├── middleware/   # auth JWT, socketAuth
 │   │   └── server.ts
 │   └── prisma/
-├── frontend/             # Next.js + Tailwind
-│   └── app/
+├── frontend/             # Next.js (App Router) + Tailwind
+│   └── src/
+│       ├── app/          # pages (login, register, conversations)
+│       ├── components/
+│       └── contexts/
+├── DEMARRAGE.md          # Démarrage rapide et dépannage
+├── separations_des_taches.md
 └── README.md
 ```
 
 | Service   | Port (host) | Description              |
 |-----------|-------------|--------------------------|
 | frontend  | 3002        | Next.js (App Router)     |
-| backend   | 3001        | API Express              |
-| postgres  | 5432        | PostgreSQL 16           |
-| redis     | 6379        | Redis 7                  |
+| backend   | 3001        | API Express + Socket.IO  |
+| postgres  | 5433        | PostgreSQL 16            |
+| redis     | 6379        | Redis 7                   |
 
-Le backend dépend de Postgres et Redis (healthchecks). Le frontend dépend du backend.
+Le backend dépend de Postgres et Redis (healthchecks). Le frontend dépend du backend. Pour un **démarrage rapide** et les URLs utiles, voir [DEMARRAGE.md](DEMARRAGE.md).
 
 ---
 
@@ -88,7 +97,8 @@ make reset
 
 - **Backend (health)** : [http://localhost:3001/health](http://localhost:3001/health)  
   Réponse attendue : `{"status":"ok","db":"connected","redis":"connected"}`
-- **Frontend** : [http://localhost:3002](http://localhost:3002)
+- **Backend (ping)** : [http://localhost:3001/ping](http://localhost:3001/ping) → `{"ok":true}` (sans DB/Redis)
+- **Frontend** : [http://localhost:3002](http://localhost:3002) (accueil, login, register, conversations)
 
 ---
 
@@ -113,10 +123,10 @@ make reset
 
 - **Frontend** : http://localhost:3002  
 - **API Backend** : http://localhost:3001  
-- **PostgreSQL** : `localhost:5432` (user/password/db dans `.env`)  
+- **PostgreSQL** : `localhost:5433` (port hôte ; user/password/db dans `.env`)  
 - **Redis** : `localhost:6379`  
 
-Connexion Postgres depuis la machine hôte :
+Connexion Postgres (depuis la machine hôte, client sur le port 5433, ou via le conteneur) :
 
 ```bash
 docker compose exec postgres psql -U postgres -d chatb2b
@@ -126,10 +136,10 @@ docker compose exec postgres psql -U postgres -d chatb2b
 
 ## Troubleshooting
 
-### Port déjà utilisé (ex. 3000, 3001, 5432)
+### Port déjà utilisé (ex. 3000, 3001, 3002, 5433)
 
 - Arrêter l’autre processus qui utilise le port, ou  
-- Changer le port exposé dans `docker-compose.yml` (ex. `"3002:3000"` pour le frontend).
+- Changer le port exposé dans `docker-compose.yml` (ex. `"3002:3000"` pour le frontend, `"5433:5432"` pour Postgres).
 
 ### Backend : "Cannot find module 'X'"
 
@@ -159,6 +169,15 @@ docker compose up -d
 # ou
 make reset
 ```
+
+---
+
+## Documentation
+
+| Fichier | Contenu |
+|---------|---------|
+| [DEMARRAGE.md](DEMARRAGE.md) | Démarrage rapide, qui fait quoi (ports, URLs), dépannage |
+| [separations_des_taches.md](separations_des_taches.md) | Répartition des tâches (backend / frontend / DevOps) |
 
 ---
 

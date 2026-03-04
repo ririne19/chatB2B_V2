@@ -46,7 +46,7 @@ export default function LoginPage() {
             Connexion
           </h1>
           <p className="text-slate-600 text-sm mb-6">
-            Chat B2B après-vente — clients et agents
+            ENTREPRISE DEMO — clients et équipe support
           </p>
 
           {apiError && (

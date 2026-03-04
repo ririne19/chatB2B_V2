@@ -15,7 +15,7 @@ export function Navbar() {
             href="/"
             className="text-xl font-semibold text-blue-600 hover:text-blue-700"
           >
-            Chat B2B
+            ENTREPRISE DEMO
           </Link>
           <div className="flex items-center gap-4">
             {loading ? (
